@@ -3,6 +3,7 @@
 ////////////////// class DobbeltLenketListe //////////////////////////////
 
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
 
@@ -35,18 +36,18 @@ public class DobbeltLenketListe<T> implements Liste<T> {
     private int endringer;         // antall endringer i listen
 
     public DobbeltLenketListe() {
-        throw new UnsupportedOperationException();
+
     }
 
     public DobbeltLenketListe(T[] a) {
         if(a.length!=0){
-            Node current = hode;
+            Node<T> current = hode;
             int index=0;
             for(int i = 0; i<a.length; ++i){
                 if(a[i]==null){
                     continue;
                 }
-                hode = new Node(a[i]);
+                hode = new Node<T>(a[i]);
                 index=i;
                 antall++;
                 current = hode;
@@ -69,7 +70,8 @@ public class DobbeltLenketListe<T> implements Liste<T> {
 
 
     public Liste<T> subliste(int fra, int til) {
-        throw new UnsupportedOperationException();
+        DobbeltLenketListe<T> liste = new DobbeltLenketListe<>();
+        return liste;
     }
 
     @Override
@@ -90,44 +92,141 @@ public class DobbeltLenketListe<T> implements Liste<T> {
             return false;
         }
         Node inn = new Node(verdi);
-        if(hale == null && hode == null && antall == 0){
-            hale.neste = inn;
-            hode.forrige = inn;
-            inn.neste = hale;
-            inn.forrige = hode;
-            Node temp = inn;
+        if(antall == 0){
+            hode=inn;
+            hale=inn;
         }else{
             hale.neste = inn;
-            inn.neste = null;
-            inn.forrige = hale;
+            inn.forrige=hale;
             hale = inn;
         }
+        antall++;
+        endringer++;
         return true;
+    }
+
+    private Node<T> finnNode(int indeks) {
+
+        Node<T> current;
+
+        // Om indeksen er i første halvdel av listen starter vi fra hode.
+        if (indeks < antall/2) {
+            current = hode;
+            for(int i=0; i<indeks; i++) {
+                current = current.neste;
+            }
+        }
+        // Om indeksen er i andre halvdel av listen starter vi fra halen.
+        else {
+            current = hale;
+            for(int i=antall-1; i>indeks; i--) {
+                current = current.forrige;
+            }
+        }
+        return current;
     }
 
     @Override
     public void leggInn(int indeks, T verdi) {
-        throw new UnsupportedOperationException();
+
+        if (verdi == null){
+            throw new NullPointerException("Verdi er null");
+        }
+        Node ny = new Node(verdi);
+        if(indeks == 0 && antall!=0){
+            indeksKontroll(indeks, true);
+            Node temp = hode;
+            hode = ny;
+            hode.neste = temp;
+            temp.forrige = hode;
+        }else if(indeks == antall-1){
+            indeksKontroll(indeks, true);
+            Node temp = hale;
+            hale = ny;
+            hale.forrige=temp;
+            temp.neste=hale;
+        }else if(antall == 0){
+            hode=ny;
+            hale=ny;
+
+        }else{
+            indeksKontroll(indeks, true);
+            Node forrigeNode = finnNode(indeks-1);
+            Node nesteNode = finnNode(indeks);
+            System.out.println(hale.verdi);
+            forrigeNode.neste = ny;
+            nesteNode.forrige=ny;
+            ny.neste = nesteNode;
+            ny.forrige = forrigeNode;
+        }
+        antall++;
+        endringer++;
     }
 
     @Override
     public boolean inneholder(T verdi) {
-        throw new UnsupportedOperationException();
+        int tom = indeksTil(verdi);
+        if (tom == -1){
+            return false;
+        }
+        else{
+            return true;
+        }
     }
 
     @Override
     public T hent(int indeks) {
-        throw new UnsupportedOperationException();
+        indeksKontroll(indeks, false);
+        Node<T> current = finnNode(indeks);
+        return current.verdi;
     }
 
     @Override
     public int indeksTil(T verdi) {
-        throw new UnsupportedOperationException();
+        /*if (verdi == null){
+            throw new IllegalArgumentException("Verdi er null");
+        }
+
+        T sjekkVerdi = null;
+        int indeks = -1;
+        while(verdi!=sjekkVerdi) {
+            indeks++;
+            if(indeks == antall) {
+                return -1;
+            }
+            sjekkVerdi = finnNode(indeks).verdi;
+        }
+        return indeks;*/
+        if (verdi == null){
+            throw new IllegalArgumentException("Verdi er null");
+        }
+        int indeks = 0;
+        Node current = hode;
+        for(int i = 0; i<antall; i++){
+            if(current.verdi==verdi){
+                indeks = i;
+                break;
+            }
+            current = current.neste;
+        }
+        return indeks;
     }
 
     @Override
     public T oppdater(int indeks, T nyverdi) {
-        throw new UnsupportedOperationException();
+        indeksKontroll(indeks, false);
+
+        if (nyverdi == null){
+            throw new IllegalArgumentException("Nyverdi er tom");
+        }
+        else {
+            T erstattetVerdi = finnNode(indeks).verdi;
+
+            finnNode(indeks).verdi = nyverdi;
+            endringer++;
+
+            return erstattetVerdi;
+        }
     }
 
     @Override
